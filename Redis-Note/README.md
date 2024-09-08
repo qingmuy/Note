@@ -1,10 +1,144 @@
-## Redis
+# 基础定义
 
 在内存层面实现的key-value数据库（关系型数据库），查找更为迅速，用于热点资讯的查询、秒杀等实现。一般用于Linux。
 
 
 
-### Redis中的数据类型
+## SQL和NoSQL的区别
+
+|          | SQL                                                     | NoSQL                                                        |
+| -------- | ------------------------------------------------------- | ------------------------------------------------------------ |
+| 数据结构 | 结构化                                                  | 非结构化                                                     |
+| 数据关联 | 关联的                                                  | 无关联的                                                     |
+| 查询方式 | SQL查询                                                 | 非SQL                                                        |
+| 事务特性 | ACID                                                    | BASE                                                         |
+| 存储方式 | **磁盘**                                                | **内存**                                                     |
+| 扩展性   | **垂直**                                                | **水平**                                                     |
+| 使用场景 | 1) 数据结构固定 2) 相关业务对数据安全性、一致性要求较高 | 1) 数据结构不固定 2) 对一致性、安全性要求高 3) 对性能要求较高 |
+
+
+
+## Redis的特性
+
+- 键值（key-value）型，value支持多种不同数据结构，功能丰富
+- 单线程，每个命令具备原子性
+- 低延迟，速度快（基于内存、IO多路复用、良好的编码）
+- 支持数据持久化
+- 支持主从集群、分片集群
+- 支持多语言客户端
+
+
+
+## Redis的控制使用
+
+
+
+### 按照指定配置启动
+
+在Redis的目录中修改配置文件：
+
+```properties
+# 允许访问的地址，默认是127.0.0.1，会导致只能在本地访问。修改为0.0.0.0则可以在任意IP访问，生产环境不要设置为0.0.0.0
+bind 0.0.0.0
+# 守护进程，修改为yes后即可后台运行
+daemonize yes 
+# 密码，设置后访问Redis必须输入密码
+requirepass 123321
+# 监听的端口
+port 6379
+# 工作目录，默认是当前目录，也就是运行redis-server时的命令，日志、持久化等文件会保存在这个目录
+dir .
+# 数据库数量，设置为1，代表只使用1个库，默认有16个库，编号0~15
+databases 1
+# 设置redis能够使用的最大内存
+maxmemory 512mb
+# 日志文件，默认为空，不记录日志，可以指定日志文件名
+logfile "redis.log"
+```
+
+
+
+#### 手动启动Redis
+
+```sh
+# 进入redis安装目录
+cd /usr/local/src/redis-6.2.6
+# 启动
+redis-server redis.conf
+```
+
+
+
+#### 停止Redis服务
+
+```sh
+# 利用redis-cli来执行 shutdown 命令，即可停止 Redis 服务，
+# 因为之前配置了密码，因此需要通过 -u 来指定密码
+redis-cli -u 123321 shutdown
+```
+
+
+
+### 配置开机自启动
+
+新建系统服务文件
+
+```sh
+vi /etc/systemd/system/redis.service
+```
+
+配置文件如下
+
+```properties
+[Unit]
+Description=redis-server
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/redis-server /usr/local/src/redis-6.2.6/redis.conf
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+随后重载系统服务
+
+```sh
+systemctl daemon-reload
+```
+
+使用以下命令启停Redis
+
+```sh
+# 启动
+systemctl start redis
+# 停止
+systemctl stop redis
+# 重启
+systemctl restart redis
+# 查看状态
+systemctl status redis
+```
+
+配置开机自启动
+
+```sh
+systemctl enable redis
+```
+
+
+
+### 图形化桌面客户端
+
+该仓库为Windows环境下的图形化桌面客户端：https://github.com/lework/RedisDesktopManager-Windows/releases
+
+配置连接即可
+
+
+
+## 数据结构
 
 - 字符串(string):普通字符串，Redis中最简单的数据类型。
 
@@ -16,7 +150,11 @@
 
 
 
-### Redis字符串类型常用命令
+# Redis命令
+
+
+
+## 字符串类型常用命令
 
 | 命令                    | 作用                                            |
 | ----------------------- | ----------------------------------------------- |
@@ -27,7 +165,7 @@
 
 
 
-### Redis哈希类型常用命令
+## 哈希类型常用命令
 
 是一个string类型的field和value的映射表，哈希特别适合用于存储对象。
 
@@ -41,7 +179,7 @@
 
 
 
-### Redis列表类型常用命令
+## 列表类型常用命令
 
 按照插入顺序排序。
 
@@ -54,7 +192,7 @@
 
 
 
-### Redis Set类型常用命令
+## Set类型常用命令
 
 集合成员是唯一的，集合中不能出现重复的数据。
 
@@ -69,7 +207,7 @@
 
 
 
-### Redis有序集合类型常用命令
+## 有序集合类型常用命令
 
 有序集合是string类型元素的集合，且不允许有重复成员。每个元素都会关联一个double类型的分数。
 
@@ -82,14 +220,18 @@
 
 
 
-### Redis通用命令
+## 通用命令
 
-| 命令         | 作用                         |
-| ------------ | ---------------------------- |
-| KEYS pattern | 查找所有符合给定模式的key    |
-| EXISTS key   | 检查给定key是否存在          |
-| TYPE key     | 返回key所储存的值的类型      |
-| DEL key      | 该命令用于在key存在时删除key |
+| 命令               | 作用                                               |
+| ------------------ | -------------------------------------------------- |
+| KEYS pattern       | 查找所有符合给定模式的key                          |
+| EXISTS key         | 检查给定key是否存在                                |
+| TYPE key           | 返回key所储存的值的类型                            |
+| DEL key            | 该命令用于在key存在时删除key                       |
+| EXPIRE key time(s) | 给一个key设置有效期，有效期到期时该key会被自动删除 |
+| TTL                | 查看一个KEY的剩余有效期                            |
+
+**注意**：尽量避免在生产环境下使用`KEYS`命令查询，可能会造成堵塞。
 
 
 
