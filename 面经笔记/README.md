@@ -384,4 +384,228 @@ Java 9 允许在接口中使用 `private` 方法。`private`方法可以用于�
 
 **浅拷贝**：浅拷贝会在堆上创建一个新的对象（区别于引用拷贝的一点），不过，如果原对象内部的属性是引用类型的话，浅拷贝会直接复制内部对象的引用地址，也就是说拷贝对象和原对象共用同一个内部对象。
 
-**深拷贝**：深拷贝会完全复制整个对象，包括这个对象所包含的内部对象。
+**深拷贝**：深拷贝会完全复制整个对象，包括这个对象所包含的内部对象，即引用也会被复制。
+
+
+
+### Object
+
+Object类是所有类的父类，其提供了11个基本的方法。
+
+```java
+/**
+ * native 方法，用于返回当前运行时对象的 Class 对象，使用了 final 关键字修饰，故不允许子类重写。
+ */
+public final native Class<?> getClass()
+/**
+ * native 方法，用于返回对象的哈希码，主要使用在哈希表中，比如 JDK 中的HashMap。
+ */
+public native int hashCode()
+/**
+ * 用于比较 2 个对象的内存地址是否相等，String 类对该方法进行了重写以用于比较字符串的值是否相等。
+ */
+public boolean equals(Object obj)
+/**
+ * native 方法，用于创建并返回当前对象的一份拷贝。
+ */
+protected native Object clone() throws CloneNotSupportedException
+/**
+ * 返回类的名字实例的哈希码的 16 进制的字符串。建议 Object 所有的子类都重写这个方法。
+ */
+public String toString()
+/**
+ * native 方法，并且不能重写。唤醒一个在此对象监视器上等待的线程(监视器相当于就是锁的概念)。如果有多个线程在等待只会任意唤醒一个。
+ */
+public final native void notify()
+/**
+ * native 方法，并且不能重写。跟 notify 一样，唯一的区别就是会唤醒在此对象监视器上等待的所有线程，而不是一个线程。
+ */
+public final native void notifyAll()
+/**
+ * native方法，并且不能重写。暂停线程的执行。注意：sleep 方法没有释放锁，而 wait 方法释放了锁 ，timeout 是等待时间。
+ */
+public final native void wait(long timeout) throws InterruptedException
+/**
+ * 多了 nanos 参数，这个参数表示额外时间（以纳秒为单位，范围是 0-999999）。 所以超时的时间还需要加上 nanos 纳秒。。
+ */
+public final void wait(long timeout, int nanos) throws InterruptedException
+/**
+ * 跟之前的2个wait方法一样，只不过该方法一直等待，没有超时时间这个概念
+ */
+public final void wait() throws InterruptedException
+/**
+ * 实例被垃圾回收器回收的时候触发的操作
+ */
+protected void finalize() throws Throwable { }
+```
+
+
+
+#### `==`和`equals()`的区别
+
+对于基本数据类型来说，`==` 比较的是值。
+
+对于引用数据类型来说，`==` 比较的是对象的内存地址。
+
+若类没有重写equals方法，则使用的默认是`Object`类的`equals()`方法；而一般情况下都会重写`equals()`方法比较两个对象中的属性是否相等，若属性相等即返回true。
+
+
+
+#### hashCode()的作用
+
+用于计算哈希码，计算出的值是一个`int`整数，计算出的哈希码即为该对象再哈希表中的索引位置。
+
+
+
+#### hashCode存在的意义
+
+以HashSet举例，在一个对象加入HashSet前，会先计算该对象的`HashCode`，同时也会与已经加入的对象的`HashCode`及逆行比较，若出现相同的HashCode则会使用`equals()`方法检查二者是否真正的相等。若不相等则将重新散列到其他的位置。
+
+即通过`HashCode`来简化对对象的比较。
+
+
+
+#### 重写`equals()`必须重写`hashCode()`的原因
+
+避免哈希碰撞导致的问题。如果在使用`HashMap`时只重写了equals方法而没有重写hashCode方法，会导致相同的键的二次散列问题。
+
+
+
+### String
+
+
+
+#### String、StringBuffer、StringBuilder 的区别
+
+String本身是不可变的。
+
+`StringBuilder` 与 `StringBuffer` 都继承自 `AbstractStringBuilder` 类，在 `AbstractStringBuilder` 中也是使用字符数组保存字符串，不过没有使用 `final` 和 `private` 关键字修饰，最关键的是这个 `AbstractStringBuilder` 类还提供了很多修改字符串的方法比如 `append` 方法。
+
+
+
+**线程安全性**：`StringBuffer` 对方法加了同步锁或者对调用的方法加了同步锁，所以是线程安全的。`StringBuilder` 并没有对方法进行加同步锁，所以是非线程安全的。
+
+**性能**：每次对 `String` 类型进行改变的时候，都会生成一个新的 `String` 对象，然后将指针指向新的 `String` 对象。`StringBuffer` 每次都会对 `StringBuffer` 对象本身进行操作，而不是生成新的对象并改变对象引用。相同情况下使用 `StringBuilder` 相比使用 `StringBuffer` 仅能获得 10%~15% 左右的性能提升，但却要冒多线程不安全的风险。
+
+
+
+**总结**
+
+- 操作少量的数据: 适用 `String`
+- 单线程操作字符串缓冲区下操作大量数据: 适用 `StringBuilder`
+- 多线程操作字符串缓冲区下操作大量数据: 适用 `StringBuffer`
+
+
+
+#### String不可变的原因
+
+保存字符串的数组被 `final` 修饰且为私有的，并且`String` 类没有提供/暴露修改这个字符串的方法。
+
+`String` 类被 `final` 修饰导致其不能被继承，进而避免了子类破坏 `String` 不可变。
+
+
+
+#### String的底层实现
+
+Java 9 将 `String` 的底层实现由 `char[]` 改成了 `byte[]`
+
+原因是`byte` 相较 `char` 节省一半的内存空间。
+
+
+
+#### 字符串的拼接
+
+Java 语言本身并不支持运算符重载，“+”和“+=”是专门为 String 类重载过的运算符，也是 Java 中仅有的两个重载过的运算符。
+
+```java
+String str1 = "he";
+String str2 = "llo";
+String str3 = "world";
+String str4 = str1 + str2 + str3;
+```
+
+上述代码对应字节码为：
+
+![img](D:\Note\Note\面经笔记\assets\image-20220422161637929.png)
+
+可以看出：字符串通过"+"方法进行字符串拼接的方式实际上是通过`StringBuilder` 调用 `append()` 方法实现的，拼接完成之后调用 `toString()` 得到一个 `String` 对象 
+
+
+
+**注意**：若是在循环中使用`StringBuilder`则会创建多个`StringBuilder`对象，如果直接使用其做字符串拼接则不会出现该问题。
+
+在 JDK 9 中，字符串相加“+”改为用动态方法 `makeConcatWithConstants()` 来实现，通过提前分配空间从而减少了部分临时对象的创建。然而这种优化主要针对简单的字符串拼接，如： `a+b+c` 。对于循环中的大量拼接操作，仍然会逐个动态分配内存（类似于两个两个 append 的概念），并不如手动使用 StringBuilder 来进行拼接效率高。
+
+
+
+#### String的equals()方法和Object的equals()方法的区别
+
+String的equals方法被重写过，其比较的是String字符串的值；而Object的equals方法则是比较对象的内存地址。
+
+
+
+#### 字符串常量池
+
+**字符串常量池** 是 JVM 为了提升性能和减少内存消耗针对字符串（String 类）专门开辟的一块区域，主要目的是为了避免字符串的重复创建。
+
+即若创建完一个字符串对象，则该字符串对象的引用会保存在字符串常量池中，若再创建相同的对象则会直接返回字符串常量池中的相同字符串的对象引用。
+
+```java
+// 在堆中创建字符串对象”ab“
+// 将字符串对象”ab“的引用保存在字符串常量池中
+String aa = "ab";
+// 直接返回字符串常量池中字符串对象”ab“的引用
+String bb = "ab";
+System.out.println(aa==bb);// true
+```
+
+
+
+#### new String("*")创建了几个字符串对象
+
+创建了1或2个，参考字符串常量池，若该对象存在于字符串常量池则只创建1个对象；若不存在则创建2个。
+
+
+
+#### String的intern方法的作用
+
+`String.intern()` 是一个 native（本地）方法，其作用是将指定的字符串对象的引用保存在字符串常量池中，可以简单分为两种情况：
+
+- 如果字符串常量池中保存了对应的字符串对象的引用，就直接返回该引用。
+- 如果字符串常量池中没有保存了对应的字符串对象的引用，那就在常量池中创建一个指向该字符串对象的引用并返回。
+
+
+
+#### String类型的变量和常量做"+"运算
+
+由于被`final`关键字修饰过的常量属于类，其会在编译期直接存入字符串常量池，并且，字符串常量拼接得到的字符串常量在编译阶段就已经被存放字符串常量池。
+
+
+
+在编译过程中，编译器会进行一个叫做`常量折叠`的代码优化。
+
+常量折叠会把常量表达式的值求出来作为常量嵌在最终生成的代码中，这是 Javac 编译器会对源代码做的极少量优化措施之一(代码优化几乎都在即时编译器中进行)。
+
+对于 `String str3 = "str" + "ing";` 编译器会给你优化成 `String str3 = "string";` 。
+
+并不是所有的常量都会进行折叠，只有编译器在程序编译期就可以确定值的常量才可以：
+
+- 基本数据类型( `byte`、`boolean`、`short`、`char`、`int`、`float`、`long`、`double`)以及字符串常量。
+- `final` 修饰的基本数据类型和字符串变量
+- 字符串通过 “+”拼接得到的字符串、基本数据类型之间算数运算（加减乘除）、基本数据类型的位运算（<<、>>、>>> ）
+
+而**引用的值在程序编译期是无法确定的，编译器无法对其进行优化。**
+
+举例如下：
+
+```java
+String str1 = "str";
+String str2 = "ing";
+String str3 = "str" + "ing";
+String str4 = str1 + str2;
+String str5 = "string";
+System.out.println(str3 == str4);//false
+System.out.println(str3 == str5);//true
+System.out.println(str4 == str5);//false
+```
+
