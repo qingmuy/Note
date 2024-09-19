@@ -154,6 +154,18 @@ systemctl enable redis
 
 
 
+## Key的层级格式
+
+为了区分不同的项目之间相同的Key，Redis的key支持如下格式：
+
+```bash
+[项目名]:[业务名]:[类型]:[id]
+```
+
+即使用`:`进行分隔
+
+
+
 ## 字符串类型常用命令
 
 | 命令                    | 作用                                            |
@@ -165,58 +177,87 @@ systemctl enable redis
 
 
 
+
+
 ## 哈希类型常用命令
 
-是一个string类型的field和value的映射表，哈希特别适合用于存储对象。
+哈希对象的value是一个无序字典，可以理解为Java中的HashMap结构。
 
-| 命令                 | 作用                                  |
-| -------------------- | ------------------------------------- |
-| hset key field value | 将哈希表key中的字段field的值设为value |
-| hget key field       | 获取存储在哈希表中指定字段的值        |
-| hdel key field       | 删除存储在哈希表中的指定字段          |
-| hkeys key            | 获取哈希表中所有的字段                |
-| hvals key            | 获取哈希表中所有值                    |
+若将Java对象存储为String类型，其会被序列化为Json类型，若要修改对象中的某个字段则即为不便；而hash结构可以将对象中的每个字段单独存储，便于针对单个字段进行CRUD。
+
+> ![image-20240919165039748](D:\Note\Note\Redis-Note\assets\image-20240919165039748.png)
+
+| 命令                 | 作用                                                  |
+| -------------------- | ----------------------------------------------------- |
+| hset key field value | 将哈希表key中的字段field的值设为value                 |
+| hget key field       | 获取存储在哈希表中指定字段的值                        |
+| hmset                | 批量添加多个hash类型key的field的值                    |
+| hmget                | 批量获取多个hash类型key的field的值                    |
+| hgetall              | 获取一个hash类型的key的所有field和value               |
+| hincrby              | 让一个hash类型的key的字段值自增并指定步长             |
+| hsetnx               | 添加一个hash类型的key的field值，若该field存在则不执行 |
+| hdel key field       | 删除存储在哈希表中的指定字段                          |
+| hkeys key            | 获取哈希表中所有的字段                                |
+| hvals key            | 获取哈希表中所有值                                    |
 
 
 
 ## 列表类型常用命令
 
-按照插入顺序排序。
+可以理解为Java中的LinkedList，即双向链表结构，即可以支持正向检索也可以支持反向检索。按照插入顺序排序。
 
-| 命令                      | 作用                         |
-| ------------------------- | ---------------------------- |
-| LPUSH key value1 [value2] | 将一个或多个值插入到列表头部 |
-| LRANGE key start stop     | 获取列表指定范围内的元素     |
-| RPOP key                  | 移除并获取列表最后一个元素   |
-| LLEN key                  | 获取列表长度                 |
+其特点在于：有序、元素可以重复、插入和删除快、查询速度一般。
+
+举例使用场景：点赞列表、评论列表
+
+| 命令                      | 作用                                          |
+| ------------------------- | --------------------------------------------- |
+| LPUSH key value1 [value2] | 向列表左侧插入一个或多个元素                  |
+| LPOP key                  | 移除并返回列表左侧的第一个元素，没有则返回nil |
+| RPUSH key value...        | 向列表右侧插入一个或多个元素                  |
+| LRANGE key start stop     | 获取列表指定范围内的元素                      |
+| RPOP key                  | 移除并获取列表最后一个元素                    |
+| LLEN key                  | 获取列表长度                                  |
+| BLPOP和BRPOP              | 在没有元素时等待指定时间，而不是直接返回nil   |
 
 
 
 ## Set类型常用命令
 
-集合成员是唯一的，集合中不能出现重复的数据。
+可以理解为HashSet，集合成员是唯一的，集合中不能出现重复的数据。
 
-| 命令                       | 作用                     |
-| -------------------------- | ------------------------ |
-| SADD key member1 [member2] | 向集合添加一个或多个成员 |
-| SMEMBERS key               | 返回集合中的所有成员     |
-| SCARD key                  | 获取集合的成员数         |
-| SINTER key1 [key2]         | 返回给定所有集合的交集   |
-| SUNION key1 [key2]         | 返回所有给定集合的并集   |
-| SREM key member1 [member2] | 删除集合中一个或多个成员 |
+特点在于：无序、元素不可重复、查找快、支持交集、并集、差集等功能
+
+| 命令                       | 作用                        |
+| -------------------------- | --------------------------- |
+| SADD key member1 [member2] | 向集合添加一个或多个成员    |
+| SMEMBERS key               | 返回集合中的所有成员        |
+| SCARD key                  | 获取集合的成员个数          |
+| SINTER key1 [key2]         | 返回给定所有集合的交集      |
+| SUNION key1 [key2]         | 返回所有给定集合的并集      |
+| SREM key member1 [member2] | 删除集合中一个或多个成员    |
+| SISMEMBER key member       | 判断一个元素是否存在于set中 |
 
 
 
-## 有序集合类型常用命令
+## 有序集合(SortedSet)类型常用命令
 
-有序集合是string类型元素的集合，且不允许有重复成员。每个元素都会关联一个double类型的分数。
+可排序的Set集合，可以类比为Java中的TreeSet，但是底层结构相差很大。SortedSet的每个元素都带有一个score属性(double类型)，可以基于score属性对元素排序，其底层实现是一个`跳表(SkipList)`加hash表。
 
-| 命令                                     | 作用                                        |
-| ---------------------------------------- | ------------------------------------------- |
-| ZADD key score1 member1 [score2 member2] | 向有序集合添加一个或多个成员                |
-| ZRANGE key start stop [WITHSCORES]       | 通过索引区间返回有序集合中指定区间内的成员  |
-| ZINCRBY key increment member             | 有序集合中对指定成员的分数加上增量increment |
-| ZREM key member [member ...]             | 移除有序集合中的一个或多个成员              |
+有如下特点：可排序、元素不重复、查询速度快
+
+使用场景：排行榜
+
+| 命令                                      | 作用                                       |
+| ----------------------------------------- | ------------------------------------------ |
+| ZADD key score1 member1 [score2 member2]  | 向有序集合添加一个或多个成员               |
+| ZREM key member [member ...]              | 移除有序集合中的一个或多个成员             |
+| ZSCORE key member                         | 获取指定怨怒是的score值                    |
+| ZRANK key member                          | 获取指定的元素排名                         |
+| ZCARD key                                 | 获取元素个数                               |
+| ZCOUNT key increment member               | 让指定元素自增，步长为increment            |
+| ZRANGE key start stop [WITHSCORES]        | 通过索引区间返回有序集合中指定区间内的成员 |
+| ZRANGEBYSCORE key start stop [WITHSCORES] | 排序后返回指定返回内的元素                 |
 
 
 
@@ -235,13 +276,65 @@ systemctl enable redis
 
 
 
-### Redis的Java端
+# Redis的Java端
 
-常用的有Jedis、Lettuce、Spring Data Redis。
+常用的有Jedis、Lettuce、Spring Data Redis，其中Spring Data Redis包含了Jedis和Lettuce。
 
 
 
-### Spring Data Redis使用方式
+## Jedis
+
+其封装的方法与原生语句基本一致。
+
+缺点在于Jedis本身是不安全的，且频繁的创建和销毁连接会产生性能损耗，因此应使用Jedis连接池代替。
+
+
+
+### 基础使用
+
+1. 引入依赖
+
+```xml
+<dependency>
+    <groupId>redis.clients</groupId>
+    <artifactId>jedis</artifactId>
+    <version>3.7.0</version>
+</dependency>
+```
+
+2. 建立连接
+
+```java
+private Jedis jedis;
+
+@BeforeEach
+void setUp() {
+    // 建立连接
+    jedis = new Jedis(redisIp, port);
+    // 设置密码
+    jedis.auth(password);
+    // 选择库（默认0）
+    jedis.select(0);
+}
+```
+
+3. 释放资源
+
+```java
+@AfterEach
+void tearDowm() {
+    // 释放资源
+    if (jedis != null) {
+        jedis.close();
+    }
+}
+```
+
+
+
+## Spring Data Redis
+
+Spring Data Redis提供了RedisTemplate工具类，其中封装了各种对Redis的操作。并将不同数据类型的操作API封装到了不同的类型中。
 
 操作步骤：
 
@@ -250,16 +343,30 @@ systemctl enable redis
 3. 编写配置类，创建RedisTemplate对象
 4. 通过RedisTemplate对象操作Redis
 
-
+其maven坐标如下：
 
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-redis</artifactId>
 </dependency>
+<!-- 连接池依赖 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-pool2</artifactId>
+</dependency>
 ```
 
+其提供的部分API如下：
 
+| API                         | 返回值类型      | 说明                    |
+| --------------------------- | --------------- | ----------------------- |
+| redisTemplate.opsForValue() | ValueOperations | 操作`String`类型数据    |
+| redisTemplate.opsForHash()  | HashOperations  | 操作`Hash`类型数据      |
+| redisTemplate.opsForList()  | ListOperations  | 操作`List`类型数据      |
+| redisTemplate.opsForSet()   | SetOperations   | 操作`Set`类型数据       |
+| redisTemplate.opsForZSet()  | ZSetOperations  | 操作`SortedSet`类型数据 |
+| redisTemplate               |                 | 通用的命令              |
 
 
 
