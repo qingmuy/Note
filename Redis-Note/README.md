@@ -370,6 +370,36 @@ Spring Data Redis提供了RedisTemplate工具类，其中封装了各种对Redis
 
 
 
+### RedisTemplate的RedisSerializer
+
+RedisTemplate默认使用JDK序列化器序列化，其性能差且内存占用大，故需要使用其他序列化器。
+
+
+
+#### 方案一
+
+如需对对象进行序列化处理，可以使用`GenericJackson2JsonRedisSerializer`序列化器。
+
+对RedisTemplate指定序列化器：
+
+```java
+GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer()
+template.setValueSerializer(jsonRedisSerializer);
+template.setHashValueSerializer(jsonRedisSerializer);
+```
+
+该方法缺点在于会在Redis中额外存储一个`class`字段，这导致存储占用过多。
+
+
+
+#### 方案二
+
+统一使用String序列化器，key和value均会被序列化为String类型，在存储数据和取出数据的过程中手动完成序列化和反序列化。
+
+
+
+
+
 ### Spring Cache
 
 一个用于操控内存数据库的框架，实现了基于注解的缓存功能，只需要添加简单的注解就能实现缓存功能。
