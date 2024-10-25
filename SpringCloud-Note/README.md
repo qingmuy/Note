@@ -1017,19 +1017,29 @@ public void updateConfigInfo(String configInfo){
 
 ## 微服务保护和分布式事务
 
+在微服务中会存在一些问题：
+
+**业务健壮性问题**
+
+某个微服务中有多个功能，某个功能的阻塞导致在该微服务中的其他功能不可用，我们需要保证业务健壮性
 
 
-### 雪崩问题
+
+**雪崩问题（级联失败）**
 
 微服务调用链路中的某个服务故障，引起整个链路中的所有微服务都不可用，这就是雪崩。
 
-
-
-雪崩问题产生的原因是什么?
+雪崩问题产生的原因：
 
 - 微服务相互调用，服务提供者出现故障或阻塞。
 - 服务调用者没有做好异常处理，导致自身故障。
 - 调用链中的所有服务级联失败，导致整个集群故障
+
+
+
+**跨服务事务问题**
+
+若要在调用多个微服务的情况下，使用写操作，如何保证其事务性？
 
 
 
@@ -1043,7 +1053,9 @@ public void updateConfigInfo(String configInfo){
 
 
 
-#### 解决方案
+### 微服务保护
+
+#### 服务保护方案
 
 1. 请求限流：限制访问微服务的请求的并发量，避免服务因流量激增出现故障。
 
@@ -1087,6 +1099,220 @@ public void updateConfigInfo(String configInfo){
 - **异常统计和熔断**：统计服务提供方的异常比例，当比例过高表明该接口会影响到其它服务，应该拒绝调用该接口，而是直接走降级逻辑。
 
 ![image-20240708200047016](./assets/image-20240708200047016.png)
+
+
+
+#### Sentinel
+
+国内目前使用较多的方案为sentinel
+
+
+
+##### 基础使用
+
+> Sentinel是阿里巴巴开源的一款服务保护框架，目前已经加入SpringCloudAlibaba中。
+>
+> 其分为两部分：
+>
+> - **核心库**（Jar包）：不依赖于任何框架/库，能够运行于 Java 8 及以上的版本的运行时环境，同时对 Dubbo / Spring Cloud 等框架也有较好的支持。在项目中引入依赖即可实现服务限流、隔离、熔断等功能。
+> - **控制台**（Dashboard）：Dashboard 主要负责管理推送规则、监控、管理机器信息等。
+
+下载地址：[Sentinel](https://github.com/alibaba/Sentinel/releases)
+
+
+
+运行命令如下：
+
+```Shell
+java -Dserver.port=port_num -Dcsp.sentinel.dashboard.server=localhost:port_num -Dproject.name=sentinel-dashboard -jar Jar_name
+```
+
+
+
+在对应端口访问即可看到控制台，对用账号密码默认都是`sentinel`。
+
+
+
+##### 微服务整合
+
+在 pom 文件中引入
+```xml
+<!--sentinel-->
+<dependency>
+    <groupId>com.alibaba.cloud</groupId> 
+    <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+</dependency>
+```
+
+
+
+修改配置文件：
+
+```YAML
+spring:
+  cloud: 
+    sentinel:
+      transport:
+        dashboard: localhost:8090
+```
+
+
+
+重启服务，访问任意接口，sentinel的客户端就会将服务访问的信息提交到`sentinel-dashboard`控制台。并展示出统计信息。下设簇点链路栏位可对接口进行控制。
+
+簇点链路，即单机调用链路，是一次请求进入服务后经过的每一个被`Sentinel`监控的资源。默认情况下，`Sentinel`会监控`SpringMVC`的每一个`Endpoint`（接口）。
+
+需要注意的是，Spring MVC接口是按照 Restful 风格进行设计的，对于同一个地址存在不同方法构成不同接口，所以我们应该将`请求方式 + 请求路径`作为簇点资源名，只需在配置文件中添加如下配置即可：
+
+```YAML
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8090
+      http-method-specify: true # 开启请求方式前缀
+```
+
+
+
+#### 请求限流
+
+在簇点链路后面点击流控按钮，即可对其做限流配置，配置QPS阈值即可。
+
+
+
+#### 线程隔离
+
+限流可以降低服务器压力，尽量减少因并发流量引起的服务故障的概率，但并不能完全避免服务故障。一旦某个服务出现故障，我们必须隔离对这个服务的调用，避免发生雪崩。
+
+即若某个微服务的某个功能出现问题，则必须隔离该功能的调用，避免发生雪崩。这样即便出现问题也不会影响到整个服务的正常运行。
+
+
+
+##### OpenFeign 整合 Sentinel
+
+修改cart-service模块的application.yml文件，开启Feign的sentinel功能：
+
+```YAML
+feign:
+  sentinel:
+    enabled: true # 开启feign对sentinel的支持
+```
+
+> 如需测试，需要注意：默认情况下SpringBoot项目的tomcat最大线程数是200，允许的最大连接是8492，单机测试很难打满。可以修改配置文件更改最大连接：
+>
+> ```YAML
+> server:
+>   port: 8082
+>   tomcat:
+>     threads:
+>       max: 50 # 允许的最大线程数
+>     accept-count: 50 # 最大排队等待数量
+>     max-connections: 100 # 允许的最大连接
+> ```
+
+重启服务即可。
+
+
+
+##### 配置线程隔离
+
+如请求限流，控制并发线程数即可。
+
+
+
+#### 服务熔断
+
+从业务角度来说，即便没有查询成功也应该给用户返回数据，所以应该进行降级处理逻辑；若存在消耗资源较多的接口，也应该对其进行熔断处理。
+
+
+
+##### 编写降级逻辑
+
+触发限流或熔断后的请求不一定要直接报错，也可以返回一些默认数据或者友好提示，用户体验会更好。
+
+给FeignClient编写失败后的降级逻辑有两种方式：
+
+- 方式一：FallbackClass，无法对远程调用的异常做处理
+- 方式二：FallbackFactory，可以对远程调用的异常做处理，我们一般选择这种方式。
+
+
+
+在字典模块中定义降级处理类，该类实现接口`FallbackFactory`
+
+```Java
+@Slf4j
+public class ItemClientFallback implements FallbackFactory<ItemClient> {
+    @Override
+    public ItemClient create(Throwable cause) {
+        return new ItemClient() {
+            @Override
+            public List<ItemDTO> queryItemByIds(Collection<Long> ids) {
+                log.error("远程调用ItemClient#queryItemByIds方法出现异常，参数：{}", ids, cause);
+                // 查询购物车允许失败，查询失败，返回空集合
+                return CollUtils.emptyList();
+            }
+
+            @Override
+            public void deductStock(List<OrderDetailDTO> items) {
+                // 库存扣减业务需要触发事务回滚，查询失败，抛出异常
+                throw new BizIllegalException(cause);
+            }
+        };
+    }
+}
+```
+
+然后在配置类中将降级逻辑类注册为一个`Bean`
+
+```java
+@Bean
+public ItemClientFallback itemClientFallback() {
+    return new ItemClientFallback();
+}
+```
+
+在接口上方的`@FeignClient`中将该类进行配置：
+
+```java
+@FeignClient(value = "item-service", fallbackFactory = ItemClientFallback.class)
+```
+
+
+
+##### 服务熔断
+
+熔断路由，阻止请求。其判断方式就是通过统计接口中的**慢请求比例**与异**常请求比例**，若这些比比超出阈值则熔断路由统一走降级处理。
+
+
+
+断路器的工作状态切换有一个状态机来控制：
+
+![image-20241025160522502](D:\Note\Note\SpringCloud-Note\assets\image-20241025160522502.png)
+
+状态机包括三个状态：
+
+- **closed**：关闭状态，断路器放行所有请求，并开始统计异常比例、慢请求比例。超过阈值则切换到open状态
+- **open**：打开状态，服务调用被**熔断**，访问被熔断服务的请求会被拒绝，快速失败，直接走降级逻辑。Open状态持续一段时间后会进入half-open状态
+- **half-open**：半开状态，放行一次请求，根据执行结果来判断接下来的操作。 
+  - 请求成功：则切换到closed状态
+  - 请求失败：则切换到open状态
+
+
+
+通过对簇点后的熔断按钮进行配置熔断策略，在弹出的表格中这样填写：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1729843641651-1.png)
+
+这种是按照慢调用比例来做熔断，上述配置的含义是：
+
+- RT超过200毫秒的请求调用就是慢调用
+- 统计最近1000ms内的最少5次请求，如果慢调用比例不低于0.5，则触发熔断
+- 熔断持续时长20s
+
+
+
+### 分布式事务
 
 
 
@@ -4240,4 +4466,4 @@ aggs代表聚合，与query同级，此时query的作用是：
 
 聚合结果与搜索文档同一级别，因此需要单独获取和解析。具体解析语法如下：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723729516308-29.png)
+#### ![img](D:\Code\Java\SpringCloud-Note\assets\1723729516308-29.png)
