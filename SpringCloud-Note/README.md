@@ -1314,7 +1314,300 @@ public ItemClientFallback itemClientFallback() {
 
 ### 分布式事务
 
+对比下单流程：
 
+> ![image-20241027101705744](D:\Note\Note\SpringCloud-Note\assets\image-20241027101705744.png)
+
+由于订单、购物车、商品分别在三个不同的微服务，而每个微服务都有自己独立的数据库，因此下单过程中就会跨多个数据库完成业务。而每个微服务都会执行自己的本地事务：
+
+- 交易服务：下单事务
+- 购物车服务：清理购物车事务
+- 库存服务：扣减库存事务
+
+整个业务中，各个本地事务是有关联的。因此每个微服务的本地事务，也可以称为**分支事务**。多个有关联的分支事务一起就组成了**全局事务**。我们必须保证整个全局事务同时成功或失败。
+
+每一个分支事务就是传统的**单体事务**，都可以满足ACID特性，但是**全局事务并未遵循ACID的原则**，归其原因就是参与事务的多个子业务在不同的微服务，跨越了不同的数据库。虽然每个单独的业务都能在本地遵循ACID，但是它们互相之间没有感知，不知道有人失败了，无法保证最终结果的统一，也就无法遵循ACID的事务特性了。
+
+这就是分布式事务问题，出现以下情况之一就可能产生分布式事务问题：
+
+- 业务跨多个服务实现
+- 业务跨多个数据源实现
+
+
+
+补充：
+
+> 为保证事务(transaction)是正确可靠的,所必须具备的四个特性:原子性(atomicity,或称不可分割性)、一致性(consistency)、隔离性(isolation,又称独立性)、持久性(durability)。
+
+
+
+#### Seata
+
+作为阿里巴巴在2019年开源的方案，Seata功能最完善，使用也最多。
+
+使用分布式事务最主要的原因就是参与事务的多个分支事务之间互相无感知，不知道彼此的执行状态，那么解决这一问题的思想十分简单，即：找一个统一的**事务协调者**，与多个分支事务通信，检测每个分支事务的执行状态，保证全局事务下的每一个分支事务同时成功或失败即可。大多数的分布式事务框架都是基于这个理论来实现的。
+
+在Seata的事务管理中存在三个角色：
+
+-  **TC (Transaction Coordinator) - 事务协调者：**维护全局和分支事务的状态，协调全局事务提交或回滚。 
+-  **TM (Transaction Manager) -** **事务管理器：**定义全局事务的范围、开始全局事务、提交或回滚全局事务。 
+-  **RM (Resource Manager) -** **资源管理器：**管理分支事务，与TC交谈以注册分支事务和报告分支事务的状态，并驱动分支事务提交或回滚。 
+
+> Seata的工作架构如图所示：
+>
+> ![img](D:\Note\Note\SpringCloud-Note\assets\1729995804108-1.png)
+
+
+
+可以将`TM`与 `RM` 立即为Seata的客户端，引入到参与事务的微服务依赖中即可，此后 TM 和 RM 就会协助微服务，实现本地分支事务与TC之间交互，实现事务的提交和回滚。
+
+`TC` 则是事务协调中心，是一个独立的微服务，需要单独部署。
+
+
+
+#### 集成Seata
+
+添加依赖
+
+```XML
+<!--统一配置管理-->
+  <dependency>
+      <groupId>com.alibaba.cloud</groupId>
+      <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+  </dependency>
+  <!--读取bootstrap文件-->
+  <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-bootstrap</artifactId>
+  </dependency>
+  <!--seata-->
+  <dependency>
+      <groupId>com.alibaba.cloud</groupId>
+      <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+  </dependency>
+```
+
+修改配置文件：
+
+```YAML
+seata:
+  registry: # TC服务注册中心的配置，微服务根据这些信息去注册中心获取tc服务地址
+    type: nacos # 注册中心类型 nacos
+    nacos:
+      server-addr: 192.168.150.101:8848 # nacos地址
+      namespace: "" # namespace，默认为空
+      group: DEFAULT_GROUP # 分组，默认是DEFAULT_GROUP
+      application: seata-server # seata服务名称
+      username: nacos
+      password: nacos
+  tx-service-group: hmall # 事务组名称
+  service:
+    vgroup-mapping: # 事务组与tc集群的映射关系
+      hmall: "default"
+```
+
+
+
+**添加数据库表**
+
+seata的客户端在解决分布式事务的时候需要记录一些中间数据，保存在数据库中。因此要先准备一个表。
+
+
+
+**使用**
+
+将`@Transactional`注解替换为`@GlobalTransactional`
+
+
+
+#### XA模式
+
+Seata支持四种不同的分布式事务解决方案：
+
+- **XA**
+- **TCC**
+- **AT**
+- **SAGA**
+
+> `XA` 规范 是` X/Open` 组织定义的分布式事务处理（DTP，Distributed Transaction Processing）标准，XA 规范 描述了全局的`TM`与局部的`RM`之间的接口，几乎所有主流的数据库都对 XA 规范 提供了支持。
+
+
+
+##### 两阶段提交
+
+**注意：这是正常的提交模式，即在分布式情况下会产生事务失效的情况**
+
+A是规范，目前主流数据库都实现了这种规范，实现的原理都是基于两阶段提交。
+
+正常情况：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1730017242495-4.png)
+
+异常情况：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1730017242495-5.png)
+
+
+
+##### Seata的XA模型
+
+一阶段：
+
+- 事务协调者通知每个事务参与者执行本地事务
+- 本地事务执行完成后报告事务执行状态给事务协调者，此时事务不提交，继续持有数据库锁
+
+二阶段：
+
+- 事务协调者基于一阶段的报告来判断下一步操作
+- 如果一阶段都成功，则通知所有事务参与者，提交事务
+- 如果一阶段任意一个参与者失败，则通知所有事务参与者回滚事务
+
+Seata对原始的XA模式做了简单的封装和改造，以适应自己的事务模型，基本架构如图：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1730018089594-10.png)
+
+`RM`一阶段的工作：
+
+1. 注册分支事务到`TC`
+2. 执行分支业务sql但不提交
+3. 报告执行状态到`TC`
+
+`TC`二阶段的工作：
+
+1.  `TC`检测各分支事务执行状态
+   1. 如果都成功，通知所有RM提交事务
+   2. 如果有失败，通知所有RM回滚事务 
+
+`RM`二阶段的工作：
+
+- 接收`TC`指令，提交或回滚事务
+
+
+
+> 总结：实际上就是各个微服务的事务先执行但是不提交，最后将结果全部提交到TC，若任一微服务的事务出现异常，则均不提交。
+
+
+
+##### 优缺点
+
+`XA`模式的优点：
+
+- 事务的强一致性，满足ACID原则
+- 常用数据库都支持，实现简单，并且没有代码侵入
+
+`XA`模式的缺点：
+
+- 因为一阶段需要锁定数据库资源，等待二阶段结束才释放，性能较差
+- 依赖关系型数据库实现事务
+
+
+
+##### 使用XA模式
+
+在配置文件中设置：
+
+```yaml
+seata:
+  data-source-proxy-mode: XA
+```
+
+在入口方法上添加`@GlobalTransactional`标记分布式事务：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1730018497285-13.png)
+
+
+
+#### AT模式
+
+`AT`模式同样是分阶段提交的事务模型，不过缺弥补了`XA`模型中资源锁定周期过长的缺陷。
+
+
+
+##### Seata的AT模型
+
+基本流程图：
+
+![img](D:\Note\Note\SpringCloud-Note\assets\1730018609057-16.png)
+
+阶段一`RM`的工作：
+
+- 注册分支事务
+- 记录undo-log（数据快照）
+- 执行业务sql并提交
+- 报告事务状态
+
+阶段二提交时`RM`的工作：
+
+- 删除undo-log即可
+
+阶段二回滚时`RM`的工作：
+
+- 根据undo-log恢复数据到更新前
+
+
+
+总结：相对于AT模式而言，其在SQL执行之前会保存一个快照，同时若SQL执行则立即提交事务，这样就提高了效率，但是**丧失了短期的一致性，可能造成脏数据读**，若出现异常，则通过日志返回数据。若无异常则删除日志。
+
+
+
+##### 流程梳理
+
+我们用一个真实的业务来梳理下AT模式的原理。
+
+比如，现在有一个数据库表，记录用户余额：
+
+| **id** | **money** |
+| :----- | :-------- |
+| 1      | 100       |
+
+其中一个分支业务要执行的SQL为：
+
+```SQL
+ update tb_account set money = money - 10 where id = 1
+```
+
+AT模式下，当前分支事务执行流程如下：
+
+**一阶段**：
+
+1. `TM`发起并注册全局事务到`TC`
+2. `TM`调用分支事务
+3. 分支事务准备执行业务SQL
+4. `RM`拦截业务SQL，根据where条件查询原始数据，形成快照。
+
+```JSON
+{
+  "id": 1, "money": 100
+}
+```
+
+1. `RM`执行业务SQL，提交本地事务，释放数据库锁。此时 money = 90
+2. `RM`报告本地事务状态给`TC`
+
+**二阶段**：
+
+1. `TM`通知`TC`事务结束
+2. `TC`检查分支事务状态
+   1. 如果都成功，则立即删除快照
+   2. 如果有分支事务失败，需要回滚。读取快照数据（{"id": 1, "money": 100}），将快照恢复到数据库。此时数据库再次恢复为100
+
+流程图：
+
+![img](https://b11et3un53m.feishu.cn/space/api/box/stream/download/asynccode/?code=YTMzZWM1MzgzZjc0ZmE4NjliYWJiM2MwMGVmYzg3OWVfQTJvcGszYVRsQVNKZUlyNU16VFE4a0U4WXdvSWZOUk5fVG9rZW46SXZuaGJxMU13b2hSYnZ4d0pGVGNzWm9CbkZnXzE3MzAwMTk1MDc6MTczMDAyMzEwN19WNA)
+
+
+
+##### 使用
+
+**配置文件不设置XA模式即默认AT模式。**
+
+
+
+#### XA模式和AT模式的区别
+
+- XA模式一阶段不提交事务，锁定资源；AT模式一阶段直接提交，不锁定资源。
+- XA模式依赖数据库机制实现回滚；AT模式利用数据快照实现数据回滚。
+- XA模式实现强一致性，AT模式实现了最终一致性。
 
 
 
