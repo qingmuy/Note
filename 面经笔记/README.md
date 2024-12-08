@@ -20,7 +20,7 @@
 
 但是AOT无法支持Java的一些动态特性，如反射、动态代理、动态加载、JNI等，导致许多库与框架(Spring、CGLIB)无法使用，所以仍然使用JIT即时编译器。
 
-![JIT vs AOT](D:\Note\Note\面经笔记\assets\jit-vs-aot.png)
+![JIT vs AOT](.\assets\jit-vs-aot.png)
 
 ### 基本语法
 
@@ -138,7 +138,7 @@ Integer i = Integer.valueOf(40);
 
 因此需要注意的是：**所有整型包装类对象之间值的比较，全部使用 equals 方法比较**。
 
-![img](D:\Note\面经笔记\assets\up-1ae0425ce8646adfb768b5374951eeb820d.png)
+![img](.\assets\up-1ae0425ce8646adfb768b5374951eeb820d.png)
 
 
 
@@ -528,7 +528,7 @@ String str4 = str1 + str2 + str3;
 
 上述代码对应字节码为：
 
-![img](D:\Note\Note\面经笔记\assets\image-20220422161637929.png)
+![img](.\assets\image-20220422161637929.png)
 
 可以看出：字符串通过"+"方法进行字符串拼接的方式实际上是通过`StringBuilder` 调用 `append()` 方法实现的，拼接完成之后调用 `toString()` 得到一个 `String` 对象 
 
@@ -615,7 +615,7 @@ System.out.println(str4 == str5);//false
 
 ### 异常
 
-> ![Java 异常类层次结构图](D:\Note\Note\面经笔记\assets\types-of-exceptions-in-java.png)
+> ![Java 异常类层次结构图](.\assets\types-of-exceptions-in-java.png)
 
 
 
@@ -885,7 +885,7 @@ printArray( stringArray  );
 
 #### SPI和API的区别
 
-> ![SPI VS API](D:\Note\Note\面经笔记\assets\spi-vs-api.png)
+> ![SPI VS API](.\assets\spi-vs-api.png)
 
 
 
@@ -925,7 +925,7 @@ printArray( stringArray  );
 
 #### 序列化协议与TCP/IP 4层模型对应位置
 
-> ![TCP/IP 四层模型](D:\Note\Note\面经笔记\assets\tcp-ip-4-model.png)
+> ![TCP/IP 四层模型](.\assets\tcp-ip-4-model.png)
 
 由图可知，在OSI 七层协议模型中，表示层做的工作即将用户数据转换为二进制流，而表示层属于TCP/IP层模型中的应用层， 所以对应应用层一部分。
 
@@ -1005,6 +1005,150 @@ printArray( stringArray  );
 
 
 
+## 集合
+
+### 基础概述
+
+集合也叫容器，其主要由两个接口派生：`Collection`接口和`Map`接口。
+
+![Java 集合框架概览](.\assets\java-collection-hierarchy.png)
+
+
+
+#### List，Set，Queue，Map四者的区别
+
+`List`(对付顺序的好帮手): 存储的元素是有序的、可重复的。
+
+`Set`(注重独一无二的性质): 存储的元素不可重复的。
+
+`Queue`(实现排队功能的叫号机): 按特定的排队规则来确定先后顺序，存储的元素是有序的、可重复的。
+
+`Map`(用 key 来搜索的专家): 使用键值对（key-value）存储，类似于数学上的函数 y=f(x)，"x" 代表 key，"y" 代表 value，key 是无序的、不可重复的，value 是无序的、可重复的，每个键最多映射到一个值。
+
+
+
+#### 底层数据结构总结
+
+**Collection接口下的集合**
+
+**List**
+
+- `ArrayList`：`Object[]` 数组。详细可以查看：[ArrayList 源码分析]()。
+- `Vector`：`Object[]` 数组。
+- `LinkedList`：双向链表(JDK1.6 之前为循环链表，JDK1.7 取消了循环)。
+
+
+
+**Set**
+
+`HashSet`(无序，唯一): 基于 `HashMap` 实现的，底层采用 `HashMap` 来保存元素。
+
+`LinkedHashSet`: `LinkedHashSet` 是 `HashSet` 的子类，并且其内部是通过 `LinkedHashMap` 来实现的。
+
+`TreeSet`(有序，唯一): 红黑树(自平衡的排序二叉树)。
+
+
+
+**Queue**
+
+`PriorityQueue`: `Object[]` 数组来实现小顶堆。详细可以查看：[PriorityQueue 源码分析]()。
+
+`DelayQueue`:`PriorityQueue`。详细可以查看：[DelayQueue 源码分析]()。
+
+`ArrayDeque`: 可扩容动态双向数组。
+
+
+
+**Map接口下的集合**
+
+`HashMap`：JDK1.8 之前 `HashMap` 由数组+链表组成的，数组是 `HashMap` 的主体，链表则是主要为了解决哈希冲突而存在的（“拉链法”解决冲突）。JDK1.8 以后在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为 8）（将链表转换成红黑树前会判断，如果当前数组的长度小于 64，那么会选择先进行数组扩容，而不是转换为红黑树）时，将链表转化为红黑树，以减少搜索时间。
+
+`LinkedHashMap`：`LinkedHashMap` 继承自 `HashMap`，所以它的底层仍然是基于拉链式散列结构即由数组和链表或红黑树组成。另外，`LinkedHashMap` 在上面结构的基础上，增加了一条双向链表，使得上面的结构可以保持键值对的插入顺序。同时通过对链表进行相应的操作，实现了访问顺序相关逻辑。)
+
+`Hashtable`：数组+链表组成的，数组是 `Hashtable` 的主体，链表则是主要为了解决哈希冲突而存在的。
+
+`TreeMap`：红黑树（自平衡的排序二叉树）。
+
+
+
+#### HashMap和HashTable的区别
+
+1、哈希计算方法不同
+
+2、键值是否可以为空值
+
+Hashtable不允许null作为key，HashMap可以使用null作为key (不过建议还是尽量避免这样使用。HashMap以null作为key时，总是存储在table数组的名列前茅个节点上。)
+
+3、实现方式不同
+
+**hashmap**： HashMap 继承的是 AbstractMap 类。
+
+**hashtable**：Hashtable 继承的是 Dictionary类。
+
+4、初始化容量不同
+
+**hashmap**：HashMap 的初始容量为：16。
+
+**hashtable**：Hashtable 初始容量为：11。
+
+5、扩容机制不同
+
+6、支持的遍历种类不同
+
+**hashmap**：HashMap只支持Iterator遍历。
+
+**hashtable**：HashTable支持Iterator和Enumeration两种方式遍历。
+
+7、迭代器不同
+
+8、部分API不同
+
+**hashmap**：HashMap不支持contains(Object value)方法，没有重写toString()方法。
+
+**hashtable**：HashTable支持contains(Object value)方法，而且重写了toString()方法。
+
+9、同步性不同
+
+**hashmap**：HashMap是一个不同步的Map，这意味着HashMap不是线程安全的，如果没有适当的同步代码，则无法在多个线程之间共享。
+
+**hashtable**：Hashtable是一个同步的Map，Hashtable是线程安全的，可以在多个线程之间共享。如果您需要使用同步的 Map，Hashtable 比在同步包装器中使用 HashMap 更快。
+
+10、性能不同
+
+**在性能方面Hashmap比Hashtable更快**
+
+
+
+#### 选用集合的原则
+
+我们需要根据键值获取到元素值时就选用 `Map` 接口下的集合，需要排序时选择 `TreeMap`,不需要排序时就选择 `HashMap`,需要保证线程安全就选用 `ConcurrentHashMap`。
+
+我们只需要存放元素值时，就选择实现`Collection` 接口的集合，需要保证元素唯一时选择实现 `Set` 接口的集合比如 `TreeSet` 或 `HashSet`，不需要就选择实现 `List` 接口的比如 `ArrayList` 或 `LinkedList`，然后再根据实现这些接口的集合的特点来选用。
+
+
+
+### List
+
+#### ArrayList 和 Array（数组）的区别
+
+`ArrayList` 内部基于动态数组实现，比 `Array`（静态数组） 使用起来更加灵活：
+
+- `ArrayList`会根据实际存储的元素动态地扩容或缩容，而 `Array` 被创建之后就不能改变它的长度了。
+- `ArrayList` 允许你使用泛型来确保类型安全，`Array` 则不可以。
+- `ArrayList` 中只能存储对象。对于基本类型数据，需要使用其对应的包装类（如 Integer、Double 等）。`Array` 可以直接存储基本类型数据，也可以存储对象。
+- `ArrayList` 支持插入、删除、遍历等常见操作，并且提供了丰富的 API 操作方法，比如 `add()`、`remove()`等。`Array` 只是一个固定长度的数组，只能按照下标访问其中的元素，不具备动态添加、删除元素的能力。
+- `ArrayList`创建时不需要指定大小，而`Array`创建时必须指定大小。
+
+
+
+#### ArrayList 可以添加 null 值吗？
+
+`ArrayList` 中可以存储任何类型的对象，包括 `null` 值。不过，不建议向`ArrayList` 中添加 `null` 值， `null` 值无意义，会让代码难以维护比如忘记做判空处理就会导致空指针异常。
+
+
+
+
+
 # 数据库
 
 
@@ -1063,7 +1207,7 @@ ER 图由下面 3 个要素组成：
 
 如下图为一个学生选课的ER图：
 
-> ![学生与课程之间联系的E-R图](D:\Note\Note\面经笔记\assets\c745c87f6eda9a439e0eea52012c7f4a.png)
+> ![学生与课程之间联系的E-R图](.\assets\c745c87f6eda9a439e0eea52012c7f4a.png)
 
 
 
@@ -1085,7 +1229,7 @@ ER 图由下面 3 个要素组成：
 
 2NF 在 1NF 的基础之上，消除了非主属性对于码的部分函数依赖。如下图所示，展示了第一范式到第二范式的过渡。第二范式在第一范式的基础上增加了一个列，这个列称为主键，非主属性都依赖于主键。**基本自己设计的数据库都满足第二范式**。
 
-> ![第二范式](D:\Note\Note\面经笔记\assets\bd1d31be3779342427fc9e462bf7f05c.png)
+> ![第二范式](.\assets\bd1d31be3779342427fc9e462bf7f05c.png)
 
 ##### 3NF(第三范式)
 
@@ -1144,7 +1288,7 @@ ER 图由下面 3 个要素组成：
 
 阿里巴巴 Java 开发手册里要求禁止使用存储过程。
 
-![阿里巴巴Java开发手册: 禁止存储过程](D:\Note\Note\面经笔记\assets\0fa082bc4d4f919065767476a41b2156.png)
+![阿里巴巴Java开发手册: 禁止存储过程](.\assets\0fa082bc4d4f919065767476a41b2156.png)
 
 **总结：可以理解为函数**
 
@@ -1238,7 +1382,7 @@ NoSQL 数据库主要可以分为下面四种类型：
 - **图形**：图形数据库旨在轻松构建和运行与高度连接的数据集一起使用的应用程序。图形数据库的典型使用案例包括社交网络、推荐引擎、欺诈检测和知识图形。Neo4j 和 Giraph 是两款非常流行的图形数据库。
 - **宽列**：宽列存储数据库非常适合需要存储大量的数据。Cassandra 和 HBase 是两款非常流行的宽列存储数据库。
 
-> ![NoSQL 数据模型](D:\Note\Note\面经笔记\assets\types-of-nosql-datastores.png)
+> ![NoSQL 数据模型](.\assets\types-of-nosql-datastores.png)
 
 
 
@@ -1471,3 +1615,6 @@ ORDER BY prod_price DESC, prod_name ASC;
 
 
 
+
+
+# 

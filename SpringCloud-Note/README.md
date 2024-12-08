@@ -2277,7 +2277,7 @@ spring:
 
 如图所示：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723210054453-1.png)
+![img](.\assets\1723210054453-1.png)
 
 总结：
 
@@ -2373,7 +2373,7 @@ public class MqConfig {
 
 由于每个消息发送时的处理逻辑不一定相同，因此`ConfirmCallback`需要在每次发消息时单独定义：而`rabbitTemplate`的`converAndSend`方法则需要多传递一个参数，即`ConfirmCallback`
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723210717167-6.png)
+![img](.\assets\1723210717167-6.png)
 
 此处的`CorrelationData`中包含两个核心的属性：
 
@@ -2382,7 +2382,7 @@ public class MqConfig {
 
 在配置后，MQ的回执就会通过这个`Future`来返回，所以可以提前给`CorrelationData`中的`Future`添加回调函数来处理消息回执：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723210808072-9.png)
+![img](.\assets\1723210808072-9.png)
 
 
 
@@ -2411,7 +2411,7 @@ public class MqConfig {
 
 在控制台的`Exchanges`页面，添加交换机时可以配置交换机的`Durability`参数：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723216566045-12.png)
+![img](.\assets\1723216566045-12.png)
 
 设置为`Durable`就是持久化模式，`Transient`就是临时模式。
 
@@ -2421,7 +2421,7 @@ public class MqConfig {
 
 在控制台的Queues页面，添加队列时，同样可以配置队列的`Durability`参数：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723216582168-15.png)
+![img](.\assets\1723216582168-15.png)
 
 
 
@@ -2457,7 +2457,7 @@ public class MqConfig {
 
 在添加队列的时候，添加`x-queue-mod=lazy`参数即可设置队列为Lazy模式：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723216830080-18.png)
+![img](.\assets\1723216830080-18.png)
 
 
 
@@ -2477,7 +2477,7 @@ public Queue lazyQueue(){
 
 这里是通过`QueueBuilder`的`lazy()`函数配置Lazy模式，底层源码如下：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723216906834-25.png)
+![img](.\assets\1723216906834-25.png)
 
 当然，我们也可以基于注解来声明队列并设置为Lazy模式：
 
@@ -2555,7 +2555,7 @@ spring:
 
 极端情况就是消费者一直无法执行成功，那么消息requeue就会无限循环，导致mq的消息处理飙升，带来不必要的压力：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723218040416-28.png)
+![img](.\assets\1723218040416-28.png)
 
 为了应对这种极端的情况，SpringAMQP实现了消费者失败重试机制：在消费者出现异常时利用本地重试，而不是无限制的requeue到mq队列。
 
@@ -2762,7 +2762,7 @@ public MessageConverter messageConverter(){
 
 首先设定一个普通的交换机和队列，但是不对队列进行消费者绑定，而是将死信交换机与普通的队列进行绑定，再对死信交换机绑定一个队列。如图所示：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723287910632-1.png)
+![img](.\assets\1723287910632-1.png)
 
 此时若发送一条消息到`ttl.fanout`，设定`RoutingKey`，再设定消息有效期为5000毫秒。
 
@@ -3896,7 +3896,7 @@ GET /{索引库名}/_search
 
 示例：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723647680939-1.png)
+![img](.\assets\1723647680939-1.png)
 
 与`match`类似的还有`multi_match`，区别在于可以同时对多个字段搜索，而且多个字段都要满足，语法示例：
 
@@ -3937,11 +3937,11 @@ GET /{索引库名}/_search
 
 示例：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723647872807-4.png)
+![img](.\assets\1723647872807-4.png)
 
 当你输入的搜索条件不是词条，而是短语时，由于不做分词，你反而搜索不到：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723647872808-5.png)
+![img](.\assets\1723647872808-5.png)
 
 再来看下`range`查询，语法如下：
 
@@ -3968,7 +3968,7 @@ GET /{索引库名}/_search
 
 示例：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723647872808-6.png)
+![img](.\assets\1723647872808-6.png)
 
 
 
@@ -4151,7 +4151,7 @@ GET /items/_search
 
 如图：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723649079945-16.png)
+![img](.\assets\1723649079945-16.png)
 
 试想一下，假如我们现在要查询的是第999页数据呢，是不是要找第9990~10000的数据，那岂不是需要把每个分片中的前10000名数据都查询出来，汇总在一起，在内存中排序？如果查询的分页深度更深呢，需要一次检索的数据岂不是更多？
 
@@ -4217,7 +4217,7 @@ GET /{索引库名}/_search
 
 示例：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723649302436-19.png)
+![img](.\assets\1723649302436-19.png)
 
 
 
@@ -4253,7 +4253,7 @@ GET /{索引库名}/_search
 
 首先以`match_all`查询为例，其DSL和JavaAPI的对比如图：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728775373-3.png)
+![img](.\assets\1723728775373-3.png)
 
 代码解读：
 
@@ -4264,11 +4264,11 @@ GET /{索引库名}/_search
 
 这里关键的API有两个，一个是`request.source()`，它构建的就是DSL中的完整JSON参数。其中包含了`query`、`sort`、`from`、`size`、`highlight`等所有功能：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728775370-1.png)
+![img](.\assets\1723728775370-1.png)
 
 另一个是`QueryBuilders`，其中包含了我们学习过的各种**叶子查询**、**复合查询**等：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728775370-2.png)
+![img](.\assets\1723728775370-2.png)
 
 
 
@@ -4304,7 +4304,7 @@ GET /{索引库名}/_search
 
 因此，我们解析`SearchResponse`的代码就是在解析这个JSON结果，对比如下：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728825985-10.png)
+![img](.\assets\1723728825985-10.png)
 
 **代码解读**：
 
@@ -4412,7 +4412,7 @@ void testTerm() throws IOException {
 
 复合查询也是由`QueryBuilders`来构建，我们以`bool`查询为例，DSL和JavaAPI的对比如图：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728972019-13.png)
+![img](.\assets\1723728972019-13.png)
 
 完整代码如下：
 
@@ -4444,7 +4444,7 @@ void testBool() throws IOException {
 
 `requeset.source()`就是整个请求JSON参数，所以排序、分页都是基于这个来设置，其DSL和JavaAPI的对比如下：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723728992422-16.png)
+![img](.\assets\1723728992422-16.png)
 
 完整示例代码：
 
@@ -4480,7 +4480,7 @@ void testPageAndSort() throws IOException {
 
 首先来看高亮条件构造，其DSL和JavaAPI的对比如图：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723729069828-19.png)
+![img](.\assets\1723729069828-19.png)
 
 示例代码如下：
 
@@ -4508,7 +4508,7 @@ void testHighlight() throws IOException {
 
 再来看结果解析，文档解析的部分不变，主要是高亮内容需要单独解析出来，其DSL和JavaAPI的对比如图：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723729069828-20.png)
+![img](.\assets\1723729069828-20.png)
 
 代码解读：
 
@@ -4584,7 +4584,7 @@ GET /items/_search
 
 来看下查询的结果：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723729259156-25.png)
+![img](.\assets\1723729259156-25.png)
 
 
 
@@ -4755,8 +4755,8 @@ aggs代表聚合，与query同级，此时query的作用是：
 
 不过聚合条件的要利用`AggregationBuilders`这个工具类来构造。DSL与JavaAPI的语法对比如下：
 
-![img](D:\Code\Java\SpringCloud-Note\assets\1723729516308-28.png)
+![img](.\assets\1723729516308-28.png)
 
 聚合结果与搜索文档同一级别，因此需要单独获取和解析。具体解析语法如下：
 
-#### ![img](D:\Code\Java\SpringCloud-Note\assets\1723729516308-29.png)
+#### ![img](.\assets\1723729516308-29.png)
