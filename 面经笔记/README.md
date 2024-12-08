@@ -20,7 +20,7 @@
 
 但是AOT无法支持Java的一些动态特性，如反射、动态代理、动态加载、JNI等，导致许多库与框架(Spring、CGLIB)无法使用，所以仍然使用JIT即时编译器。
 
-![JIT vs AOT](.\assets\jit-vs-aot.png)
+![JIT vs AOT](./assets/jit-vs-aot.png)
 
 ### 基本语法
 
@@ -138,7 +138,7 @@ Integer i = Integer.valueOf(40);
 
 因此需要注意的是：**所有整型包装类对象之间值的比较，全部使用 equals 方法比较**。
 
-![img](.\assets\up-1ae0425ce8646adfb768b5374951eeb820d.png)
+![img](./assets/up-1ae0425ce8646adfb768b5374951eeb820d.png)
 
 
 
@@ -528,7 +528,7 @@ String str4 = str1 + str2 + str3;
 
 上述代码对应字节码为：
 
-![img](.\assets\image-20220422161637929.png)
+![img](./assets/image-20220422161637929.png)
 
 可以看出：字符串通过"+"方法进行字符串拼接的方式实际上是通过`StringBuilder` 调用 `append()` 方法实现的，拼接完成之后调用 `toString()` 得到一个 `String` 对象 
 
@@ -615,7 +615,7 @@ System.out.println(str4 == str5);//false
 
 ### 异常
 
-> ![Java 异常类层次结构图](.\assets\types-of-exceptions-in-java.png)
+> ![Java 异常类层次结构图](./assets/types-of-exceptions-in-java.png)
 
 
 
@@ -885,7 +885,7 @@ printArray( stringArray  );
 
 #### SPI和API的区别
 
-> ![SPI VS API](.\assets\spi-vs-api.png)
+> ![SPI VS API](./assets/spi-vs-api.png)
 
 
 
@@ -925,7 +925,7 @@ printArray( stringArray  );
 
 #### 序列化协议与TCP/IP 4层模型对应位置
 
-> ![TCP/IP 四层模型](.\assets\tcp-ip-4-model.png)
+> ![TCP/IP 四层模型](./assets/tcp-ip-4-model.png)
 
 由图可知，在OSI 七层协议模型中，表示层做的工作即将用户数据转换为二进制流，而表示层属于TCP/IP层模型中的应用层， 所以对应应用层一部分。
 
@@ -1011,7 +1011,7 @@ printArray( stringArray  );
 
 集合也叫容器，其主要由两个接口派生：`Collection`接口和`Map`接口。
 
-![Java 集合框架概览](.\assets\java-collection-hierarchy.png)
+![Java 集合框架概览](./assets/java-collection-hierarchy.png)
 
 
 
@@ -1207,7 +1207,7 @@ ER 图由下面 3 个要素组成：
 
 如下图为一个学生选课的ER图：
 
-> ![学生与课程之间联系的E-R图](.\assets\c745c87f6eda9a439e0eea52012c7f4a.png)
+> ![学生与课程之间联系的E-R图](./assets/c745c87f6eda9a439e0eea52012c7f4a.png)
 
 
 
@@ -1229,7 +1229,7 @@ ER 图由下面 3 个要素组成：
 
 2NF 在 1NF 的基础之上，消除了非主属性对于码的部分函数依赖。如下图所示，展示了第一范式到第二范式的过渡。第二范式在第一范式的基础上增加了一个列，这个列称为主键，非主属性都依赖于主键。**基本自己设计的数据库都满足第二范式**。
 
-> ![第二范式](.\assets\bd1d31be3779342427fc9e462bf7f05c.png)
+> ![第二范式](./assets/bd1d31be3779342427fc9e462bf7f05c.png)
 
 ##### 3NF(第三范式)
 
@@ -1288,7 +1288,7 @@ ER 图由下面 3 个要素组成：
 
 阿里巴巴 Java 开发手册里要求禁止使用存储过程。
 
-![阿里巴巴Java开发手册: 禁止存储过程](.\assets\0fa082bc4d4f919065767476a41b2156.png)
+![阿里巴巴Java开发手册: 禁止存储过程](./assets/0fa082bc4d4f919065767476a41b2156.png)
 
 **总结：可以理解为函数**
 
@@ -1382,7 +1382,7 @@ NoSQL 数据库主要可以分为下面四种类型：
 - **图形**：图形数据库旨在轻松构建和运行与高度连接的数据集一起使用的应用程序。图形数据库的典型使用案例包括社交网络、推荐引擎、欺诈检测和知识图形。Neo4j 和 Giraph 是两款非常流行的图形数据库。
 - **宽列**：宽列存储数据库非常适合需要存储大量的数据。Cassandra 和 HBase 是两款非常流行的宽列存储数据库。
 
-> ![NoSQL 数据模型](.\assets\types-of-nosql-datastores.png)
+> ![NoSQL 数据模型](./assets/types-of-nosql-datastores.png)
 
 
 
