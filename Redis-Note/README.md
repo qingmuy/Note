@@ -398,6 +398,14 @@ template.setHashValueSerializer(jsonRedisSerializer);
 
 
 
+# 业务问题
+
+## 全局唯一ID
+
+全局唯一ID的使用场景例如订单的ID，其需要满足如唯一性、递增性、安全性、高可用、高性能的特性，同时为了增添ID的安全性，一般不直接使用Redis自增的数值，而是拼接信息：如控制第一位为符号位，往后31位为时间戳，剩余32位为ID。
+
+
+
 
 
 ### Spring Cache
