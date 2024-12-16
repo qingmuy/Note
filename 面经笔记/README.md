@@ -1147,6 +1147,102 @@ Hashtable不允许null作为key，HashMap可以使用null作为key (不过建议
 
 
 
+#### LinkedList为什么不支持`RandomAccess`接口
+
+实现RandomAccess接口意味着可以支持随机访问，但是LinkedList的底层数据结构是链表，内存地址不连续，只能通过指针来定位，不支持随机快速访问，所以无法实现该接口。
+
+
+
+#### LinkedList和ArrayList的区别
+
+- 二者都是不同步的，也就无法保证线程安全
+- ArrayList的底层是Object数组，而LinkedList底层是双向链表。
+- A删除元素的时间复杂度为O(n)，而L删除元素的时间复杂度为O(1)
+- A支持随机访问，L不支持
+- A的空间浪费在于list的尾部会预留部分空间，而L则由前后指针占用了空间。
+
+L的使用十分稀少，场景也被A挤占。
+
+
+
+### Set
+
+#### Comparable和Comparator的区别
+
+都是用于排序的接口，用于实现类对象之间比较大小、排序的作用。
+
+Comparable接口下有**compareTo(Object obj)**方法用于排序；
+
+Cpmparator接口下有**compare(Object obj1,  Object obj2)**方法用于排序。
+
+
+
+#### 无序性和不可重复性的区别
+
+- 无序性即添加数据时并非按照索引顺序添加而是按照数据的哈希值决定。
+- 不可重复性即添加的元素按照`equals()`判断时，返回false需同时重写`equals()`和`hashCode()`方法
+
+
+
+#### HashSet、LinkedHashSet和TreeSet的异同
+
+- 三者均线程不安全
+- HashSet底层为哈希表，即HashMap。LinkedHashSet的底层数据结构是链表和哈希表；TreeSet底层是红黑树。
+
+
+
+### Queue
+
+#### Queue和Deque的区别
+
+Queue是单端队列，符合先进先出规则；Deque是双端队列。
+
+
+
+#### ArrayDeque和LinkedList的区别
+
+- A是通过可变长的数组和双指针实现的，而L则是链表
+- A不可以存储NULL值而L可以
+- L在1.2存在，而A在1.6才引入
+- A在插入时可能存在扩容，但是均摊后插入操作仍然为O(1)，L虽然不需要扩容但是每次插入数据需要申请新的堆空间，均摊下来性能要差。
+
+
+
+#### BlockingQueue
+
+接口，继承自Queue。BlockingQueue阻塞的原因是其支持若队列中没有元素则一直阻塞，若队列已满则等待。
+
+其常用于生产者-消费者模型。
+
+其实现类有如下：
+
+1. `ArrayBlockingQueue`：使用数组实现的有界阻塞队列。在创建时需要指定容量大小，并支持公平和非公平两种方式的锁访问机制。
+
+2. `LinkedBlockingQueue`：使用单向链表实现的可选有界阻塞队列。在创建时可以指定容量大小，如果不指定则默认为`Integer.MAX_VALUE`。和`ArrayBlockingQueue`不同的是， 它仅支持非公平的锁访问机制。
+
+3. `PriorityBlockingQueue`：支持优先级排序的无界阻塞队列。元素必须实现`Comparable`接口或者在构造函数中传入`Comparator`对象，并且不能插入 null 元素。
+
+4. `SynchronousQueue`：同步队列，是一种不存储元素的阻塞队列。每个插入操作都必须等待对应的删除操作，反之删除操作也必须等待插入操作。因此，`SynchronousQueue`通常用于线程之间的直接传递数据。
+
+5. `DelayQueue`：延迟队列，其中的元素只有到了其指定的延迟时间，才能够从队列中出队。
+
+6. …
+
+
+
+#### ArrayBlockingQueue和LinkedBlockingQueue的区别
+
+都是线程安全的，区别如下：
+
+- A是基于数组实现，而L基于链表实现。
+- A有界，且必须在创建时指定容量大小，L可以不指定容量大小，且默认大小为无界，但是也可以指定队列大小成为有界的。
+- A中的锁是没有分离的，即生产和消费是同一把锁；L的锁是分离的，生产是putLock而消费是takeLock，可以防止生产者和消费者线程之间锁的争夺。
+- A需要提前分匹配数组内存，而L则是动态分配链表节点内存。
+
+
+
+
+
 
 
 # 数据库
