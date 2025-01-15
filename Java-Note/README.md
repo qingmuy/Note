@@ -2020,3 +2020,42 @@ Object invoke(Object obj, Object... args):运行方法
 参数二: 调用方法的传递的参数（如果没有就不写)
 
 返回值:方法的返回值（如果没有就不写)
+
+
+
+## 二十一、常用的类与方法
+
+### Optional类
+
+Optional类主要用于处理空指针异常(`NullPointException`)，Optional类既可以包含对象也可以为为空，其可以帮助实现函数式编程。
+
+
+
+#### 创建Optional对象
+
+```java
+@Test(expected = NoSuchElementException.class)
+public void whenCreateEmptyOptional_thenNull() {
+    Optional<User> emptyOpt = Optional.empty();
+    emptyOpt.get();
+}
+```
+
+尝试访问 emptyOpt 变量的值会导致NoSuchElementException，这是因为optional对象为空。
+
+可以使用 `of()` 和 `ofNullable()` 方法创建包含值的 Optional。两个方法的不同之处在于如果你把 null 值作为参数传递进去，of() 方法会抛出 NullPointerException。所以当不明确对象是否为null时应使用`ofNullable()`
+
+
+
+#### 访问OPtional的值
+
+第一个方法为使用`get()`方法,但是这方法会在值为null时抛出异常,为了验证是否有值，可以使用`ifPresent()`方法验证。
+
+
+
+也可以为Optional对象设置默认返回值：使用`orElse()`方法，当对象取值为空时会默认返回`orElse()`中设置的值；如果对象取值不为空则默认值被忽略。
+
+
+
+与上述方法相类似的API为`orElseGet()`，其参数为一个Lambda表达式，使用方法同上；但是二者区别在于，若`orElse()`的参数为一个方法的返回值，则无论是否会调用orElse方法，其内部的方法都会被执行，而`orElseGet()`则不会，所以后者对性能更为友好
+

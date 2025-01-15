@@ -3718,6 +3718,8 @@ public void testQuick2(){
 
   使用updateWrapper可以随意设置列的值。
 
+
+
 #### 基于 LambdaQueryWrapper 组装条件
 
 LambdaQueryWrapper表达式和QueryWrapper表达式的不同之处在于：QueryWrapper表达式传递的字段是字符串类型，一是容易写错，二是不便于重构；而基于LambdaQueryWrapper表达式则使用Lambda表达式表示字段，提高了代码的可读性和维护性。如下：
@@ -3744,6 +3746,24 @@ lambdaQueryWrapper.eq(User::getName, "John")
   .last("limit 10");
 List<User> userList = userMapper.selectList(lambdaQueryWrapper);
 ```
+
+LambdaQueryWrapper或LambdaUpdateWrapper不仅可以通过类的构造方法构造，也可以调用`Wrappers.lambdaQuery()`方法构建：
+
+```java
+LambdaQueryWrapper<User> wrapper = Wrappers.lambdaQuery(User.class);
+```
+
+
+
+注意：使用`QueryWrapper`还可以指定查询的字段，使用select()方法指定多个字段后再构造条件，如下：
+
+```java
+queryWrapper.select(Customer::getId, Customer::getName).eq(Customer::getName, name);
+```
+
+`select()`方法接受的是可变参数。
+
+
 
 ##### Lambda表达式回顾
 
