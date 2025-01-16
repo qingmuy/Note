@@ -2059,3 +2059,44 @@ public void whenCreateEmptyOptional_thenNull() {
 
 与上述方法相类似的API为`orElseGet()`，其参数为一个Lambda表达式，使用方法同上；但是二者区别在于，若`orElse()`的参数为一个方法的返回值，则无论是否会调用orElse方法，其内部的方法都会被执行，而`orElseGet()`则不会，所以后者对性能更为友好
 
+
+
+### StopWatch类
+
+是位于`org.springframework.util`包下的一个工具类，通过它可方便的对程序部分代码进行计时(ms级别)，适用于同步单线程代码块。
+
+其使用简单，只需要创建并指定任务名字开始，结束即可。
+
+```java
+public static void main(String[] args) throws InterruptedException {
+     StopWatchTest.test();
+}
+
+public static void test() throws InterruptedException {
+     StopWatch sw = new StopWatch("test");
+     sw.start("task1");
+     // do something
+    Thread.sleep(100);
+    sw.stop();
+    sw.start("task2");
+    // do something
+    Thread.sleep(200);
+    sw.stop();
+    System.out.println(sw.prettyPrint());
+}
+```
+
+输出结果：
+
+```java
+StopWatch 'test': running time (millis) = 308
+-----------------------------------------
+ms     %     Task name
+-----------------------------------------
+00104  034%  task1
+00204  066%  task2
+```
+
+或通过`shortSummary()`，`getTotalTimeMillis()`等方法直接查看进程运行时间。
+
+其优点在于简单易用，日志输出简洁直观，缺点在于一次只能开启一个任务，且在上一个任务stop前不能开启新任务。
